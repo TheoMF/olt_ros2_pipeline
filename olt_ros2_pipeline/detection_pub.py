@@ -4,6 +4,8 @@ import pinocchio as pin
 import numpy as np
 import eigenpy
 
+import rclpy.duration
+from rclpy.qos import qos_profile_system_default
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -43,6 +45,19 @@ class TfToPose(rclpy.node.Node):
         self.pose_pub = self.create_publisher(PoseStamped, "/object/detections", 5)
         self.timer = self.create_timer(0.01, self.update)
 
+    def get_transform(self, parent_frame, child_frame, stamp):
+        try:
+            transform_msg = self.tf_buffer.lookup_transform(
+                parent_frame, child_frame, stamp
+            )
+            return transform_msg
+        except TransformException as ex:
+            self.get_logger().warn(
+                f"Could not transform {parent_frame} to {child_frame}: {ex}",
+                throttle_duration_sec=2.0,
+            )
+            return None
+
     def update(self):
         t = TransformStamped()
 
@@ -61,21 +76,30 @@ class TfToPose(rclpy.node.Node):
 
         # Send the transformation
         self.tf_broadcaster.sendTransform(t)
-        try:
-            cMo_msg = self.tf_buffer.lookup_transform(
-                self.camera_frame, self.object_frame, rclpy.time.Time()
-            )
-            cMo = transform_msg_to_se3(cMo_msg.transform)
-            wMc_msg = self.tf_buffer.lookup_transform(
-                self.world_frame, self.camera_frame, cMo_msg.header.stamp
-            )
-            wMo = pin.se3ToXYZQUAT(transform_msg_to_se3(wMc_msg.transform) * cMo)
-        except TransformException as ex:
-            self.get_logger().info(
-                f"Could not transform {self.world_frame} to {self.object_frame}: {ex}"
-            )
+        wMo_msg = self.get_transform(
+            self.world_frame, self.object_frame, rclpy.time.Time()
+        )
+        if wMo_msg is None:
             return
-        ps = PoseStamped(header=cMo_msg.header)
+        wMo = pin.se3ToXYZQUAT(transform_msg_to_se3(wMo_msg.transform))
+        """
+        if cMo_msg is None:
+            return
+        self.get_logger().warn(
+            f"Current time \n {current_time} \n requested \n {cMo_msg.header.stamp}",
+            throttle_duration_sec=2.0,
+        )
+        wMc_msg = self.get_transform(
+            self.world_frame, self.camera_frame, cMo_msg.header.stamp
+        )
+        if wMc_msg is None:
+            return
+
+        cMo = transform_msg_to_se3(cMo_msg.transform)
+        wMo = pin.se3ToXYZQUAT(transform_msg_to_se3(wMc_msg.transform) * cMo)
+        """
+
+        ps = PoseStamped(header=wMo_msg.header)
         ps.header.stamp = self.get_clock().now().to_msg()
         ps.pose.position.x = wMo[0]
         ps.pose.position.y = wMo[1]

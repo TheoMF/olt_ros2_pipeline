@@ -104,7 +104,7 @@ def launch_setup(
                 parameters=[{"use_sim_time": use_sim}],
                 remappings=[
                     ("/rectify/camera_info", "/camera/color/camera_info"),
-                    ("/rectify/image", "/camera/color/image_rect_raw"),
+                    ("/rectify/image", "/camera/color/image_raw"),
                 ],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
