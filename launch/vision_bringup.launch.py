@@ -127,39 +127,8 @@ def launch_setup(
         ],
         output="both",
     )
-    detection_pub = Node(
-        package="olt_ros2_pipeline",
-        executable="detection_pub",
-        name="detection_pub_node",
-        parameters=[{"use_sim_time": use_sim}],
-        output="screen",
-    )
 
-    # aruco_single = Node(
-    #     package="aruco_ros",
-    #     executable="single",
-    #     parameters=[
-    #         {
-    #             "image_is_rectified": False,
-    #             "marker_size": 0.095,
-    #             "marker_id": 7,
-    #             "reference_frame": "panda_link0",
-    #             "camera_frame": "camera_color_optical_frame",
-    #             "marker_frame": "aruco_marker_frame",
-    #             "corner_refinement": "LINES",
-    #         }
-    #     ],
-    #     remappings=[
-    #         ("/camera_info", "/camera/color/camera_info"),
-    #         ("/image", "/camera/color/image_raw"),
-    #     ],
-    # )
-
-    return [
-        detection_pub,
-        # realsense2_camera,
-        container,
-    ]
+    return [container]
 
 
 def generate_launch_description():

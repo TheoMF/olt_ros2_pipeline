@@ -65,7 +65,6 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "detection_pub = olt_ros2_pipeline.detection_pub:main",
             "composed_tracker = olt_ros2_pipeline.composed_tracker:main",
             "happypose_labeler = olt_ros2_pipeline.happypose_labeler:main",
             "detection_pose_filter = olt_ros2_pipeline.detection_pose_filter:main",
